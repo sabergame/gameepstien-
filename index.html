@@ -1,0 +1,167 @@
+<!DOCTYPE html>
+<html lang="ar">
+<head>
+<meta charset="UTF-8">
+<title>Get away from Epstein</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<style>
+body{
+  margin:0;
+  background:#000;
+  color:white;
+  text-align:center;
+  font-family:Arial;
+}
+canvas{
+  background:#111;
+  display:block;
+  margin:10px auto;
+  border:3px solid #0f0;
+}
+#start{
+  position:fixed;
+  inset:0;
+  background:#000;
+  display:flex;
+  flex-direction:column;
+  justify-content:center;
+  align-items:center;
+}
+button{
+  padding:10px 25px;
+  font-size:18px;
+  border:none;
+  border-radius:8px;
+  cursor:pointer;
+}
+</style>
+</head>
+<body>
+
+<div id="start">
+  <h1>🧟 Zombie Survival</h1>
+  <p>تم تطوير هذه اللعبة بواسطة<br><b>عبد الرحمان زراولية</b></p>
+  <button onclick="startGame()">ابدأ</button>
+</div>
+
+<canvas id="game" width="360" height="500"></canvas>
+
+<script>
+const canvas = document.getElementById("game");
+const ctx = canvas.getContext("2d");
+
+// الصور
+const playerImg = new Image();
+playerImg.src = "player.png";
+
+const zombieImg = new Image();
+zombieImg.src = "zombie.png";
+
+// متغيرات
+let player, bullets, zombies, score, lives, run;
+let keys = {};
+
+document.addEventListener("keydown", e => keys[e.key]=true);
+document.addEventListener("keyup", e => keys[e.key]=false);
+canvas.addEventListener("click", shoot);
+
+function startGame(){
+  document.getElementById("start").style.display="none";
+  player={x:180,y:250};
+  bullets=[];
+  zombies=[];
+  score=0;
+  lives=3;
+  run=true;
+  setInterval(spawnZombie,1200);
+  loop();
+}
+
+function spawnZombie(){
+  if(!run) return;
+  let z={x:0,y:0,speed:1+score/20};
+  let s=Math.floor(Math.random()*4);
+  if(s==0){z.x=0;z.y=Math.random()*500;}
+  if(s==1){z.x=360;z.y=Math.random()*500;}
+  if(s==2){z.x=Math.random()*360;z.y=0;}
+  if(s==3){z.x=Math.random()*360;z.y=500;}
+  zombies.push(z);
+}
+
+function shoot(e){
+  bullets.push({
+    x:player.x,
+    y:player.y,
+    dx:(e.offsetX-player.x)/15,
+    dy:(e.offsetY-player.y)/15
+  });
+}
+
+function loop(){
+  if(!run) return;
+  update();
+  draw();
+  requestAnimationFrame(loop);
+}
+
+function update(){
+  if(keys["ArrowUp"]) player.y-=3;
+  if(keys["ArrowDown"]) player.y+=3;
+  if(keys["ArrowLeft"]) player.x-=3;
+  if(keys["ArrowRight"]) player.x+=3;
+
+  bullets.forEach(b=>{b.x+=b.dx;b.y+=b.dy;});
+
+  zombies.forEach(z=>{
+    let dx=player.x-z.x;
+    let dy=player.y-z.y;
+    let d=Math.hypot(dx,dy);
+    z.x+=dx/d*z.speed;
+    z.y+=dy/d*z.speed;
+    if(d<25){
+      lives--;
+      z.x=-100;
+      if(lives<=0) gameOver();
+    }
+  });
+
+  bullets.forEach((b,bi)=>{
+    zombies.forEach((z,zi)=>{
+      if(Math.hypot(b.x-z.x,b.y-z.y)<20){
+        zombies.splice(zi,1);
+        bullets.splice(bi,1);
+        score++;
+      }
+    });
+  });
+}
+
+function draw(){
+  ctx.clearRect(0,0,360,500);
+
+  // اللاعب
+  ctx.drawImage(playerImg,player.x-15,player.y-15,30,30);
+
+  // الرصاص
+  ctx.fillStyle="yellow";
+  bullets.forEach(b=>ctx.fillRect(b.x,b.y,4,4));
+
+  // الزومبي
+  zombies.forEach(z=>{
+    ctx.drawImage(zombieImg,z.x-18,z.y-18,36,36);
+  });
+
+  ctx.fillStyle="white";
+  ctx.fillText("النقاط: "+score,10,20);
+  ctx.fillText("❤️ "+lives,300,20);
+}
+
+function gameOver(){
+  run=false;
+  alert("Game Over\nنقاطك: "+score);
+  location.reload();
+}
+</script>
+
+</body>
+</html>
